@@ -1,0 +1,10 @@
+/.ipynb_checkpoints
+/backup
+/exportToHTML
+/notebooks
+/scratches
+/to_do.txt
+/pnl_bot/PNGs
+/pnl_bot/*.csv
+/pnl_bot/*.json
+

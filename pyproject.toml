@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "pnl_bot"
+version = "0.1.0"
+description = ""
+authors = ["damnpav <hcanilvap@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8.10"
+pandas = "^1.4.3"
+ccxt = "^1.91.100"
+jupyter = "^1.0.0"
+ipykernel = "^6.15.1"
+matplotlib = "^3.5.2"
+pyTelegramBotAPI = "^4.6.1"
+dataframe-image = "^0.1.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
