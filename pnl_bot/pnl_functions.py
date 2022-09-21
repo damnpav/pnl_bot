@@ -2,6 +2,7 @@ import ccxt
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
+import time
 
 
 # в соответствии со схемой pnl_count
@@ -30,6 +31,7 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
     k = 0
 
     for ticker in all_tickers:
+        time.sleep(10)
         k += 1
         print(f'{ticker}: {k} from {len(all_tickers)}')
         start_time = exchange.parse8601(start_date)
