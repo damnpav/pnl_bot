@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore')
 
 from pnl_functions import search_trades, trades_to_df
 
-
+# скрипт для часового обновления ордеров
 # вскрываем json с конфигами
 config_path = r'config.json'
 with open(config_path) as f:
@@ -29,8 +29,7 @@ def update_orders(orders_df, exchange, all_tickers):
 
     if exchange.apiKey in list(orders_df['apiKey'].unique()):
         # последняя дата ордеров по данному apiKey
-        #start_date = orders_df.loc[orders_df['apiKey'] == exchange.apiKey, 'Date(UTC)'].max()[:19].replace(' ', 'T')
-        start_date = (dt.utcnow() - td(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
+        start_date = (dt.utcnow() - td(days=1)).strftime('%Y-%m-%dT%H:%M:%S')
     else:
         # если apiKey новый, выгрузим по нему историю с прошлой недели
         start_date = str(dt.utcnow() - td(7))[:19].replace(' ', 'T')
@@ -72,8 +71,6 @@ try:
         # если есть новые трейды - записываем их
         if len(updated_df) != len(orders_df):
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
-
-    logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS SUCCESSFUL!')
 
 except Exception as e:
     print(f'Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')

@@ -26,12 +26,12 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
     -------
 
     """
-    day = 24 * 60 * 60 * 1000
+    hour = 1 * 60 * 60 * 1000
     all_trades = []
     k = 0
 
     for ticker in all_tickers:
-        time.sleep(10)
+        time.sleep(1)
         k += 1
         print(f'{ticker}: {k} from {len(all_tickers)}')
         start_time = exchange.parse8601(start_date)
@@ -39,9 +39,10 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
         if dt.utcfromtimestamp(end_time / 1e3) > dt.utcnow():
             end_time = (dt.utcnow() - dt(1970, 1, 1)).total_seconds() * 1e3
 
-        if (end_time - start_time) > 24 * 60 * 60 * 1000:
+        # если запрос более часа режем по часам
+        if (end_time - start_time) > 1 * 60 * 60 * 1000:
             while start_time < end_time:
-                end_period = start_time + day
+                end_period = start_time + hour
 
                 # проверяем, что конец искомого периода не залетел за текущее время
                 # если залетел - то ставим конец периода на текущее время по UTC + конвертим в секунды от epoch
