@@ -9,6 +9,8 @@ import dataframe_image as dfi
 import pandas as pd
 import re
 from pnl_functions import grouping_pnl, data_recency
+from fifo_module import fifo_pnl, fifo_pnl_embedded
+
 import warnings
 import sys
 
@@ -69,6 +71,16 @@ try:
 
     @bot.message_handler(regexp="h\d+")
     def regex_handler(message):
+        """
+        Function to catch callbacks with regex in commands, like 'h1, h2 and so on...'
+        Parameters
+        ----------
+        message - callback with regex
+
+        Returns
+        -------
+
+        """
         print('Handle regex')
         username = message.from_user.username
         chat_id = message.chat.id
@@ -101,6 +113,41 @@ try:
                     time.sleep(1)
 
 
+    @bot.message_handler(regexp="fifo\d+")
+    def regex_fifo_handler(message):
+        print('Handle fifo regex')
+        username = message.from_user.username
+        chat_id = message.chat.id
+        msg = message.text
+        if username not in bot_users:
+            print(f'User {username} not in bot_users')
+            logging_errors(f'{str(dt.now())[:19]}: User {username} not in bot_users')
+            return False
+
+        hour_message = re.findall('fifo\d+', msg)
+        if hour_message:
+            if hour_message[0].replace('fifo', '').isdigit():
+                hour_int = int(hour_message[0].replace('fifo', ''))
+                print(f'fifo{hour_int}_cb')
+                fifo_plot_path, fifo_df_path = fifo_pnl(hour_int, orders_path)
+
+                if fifo_plot_path == 0:
+                    bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
+                    time.sleep(1)
+                else:
+                    fifo_df_photo = open(fifo_df_path, 'rb')
+                    fifo_plot_photo = open(fifo_plot_path, 'rb')
+                    bot.send_message(chat_id, f'FIFO dataframe for {hour_int} hour:', parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_photo(chat_id=chat_id, photo=fifo_df_photo, parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_message(chat_id, f'FIFO plot for {hour_int} hour:', parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_photo(chat_id=chat_id, photo=fifo_plot_photo, parse_mode='HTML')
+                    time.sleep(1)
+
+
+
     @bot.callback_query_handler(func=lambda call: True)
     def handle_buttons(call):
         print('Handle buttons')
@@ -115,97 +162,29 @@ try:
             logging_errors(f'{str(dt.now())[:19]}: User {username} not in bot_users')
             return False
 
-        # todo по хорошему эту вермешель надо завернуть тоже в функцию
-        if msg == '/h1_cb':
-            print('h1_cb')
-            grouped_png_path, pnl_png_path = make_group_pnl(1)
-
-            if grouped_png_path == 0:
-                bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                time.sleep(1)
+        if 'h' in msg:
+            print('hour button')
+            hour_value = msg.replace('/h', '').replace('_cb', '')   # вытаскиваем час
+            if not hour_value.isdigit():
+                print(f'Не смогли вытащить значение часа из кнопки с часами')
+                logging_errors('Не смогли вытащить значение часа из кнопки с часами')
             else:
-                grouping_photo = open(grouped_png_path, 'rb')
-                pnl_photo = open(pnl_png_path, 'rb')
-                bot.send_message(chat_id, 'Grouping for 1 hour:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                time.sleep(1)
-                bot.send_message(chat_id, 'PnL for 1 hour:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-                time.sleep(1)
-        elif msg == '/h2_cb':
-            print('h2_cb')
-            grouped_png_path, pnl_png_path = make_group_pnl(2)
-
-            if grouped_png_path == 0:
-                bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                time.sleep(1)
-            else:
-                grouping_photo = open(grouped_png_path, 'rb')
-                pnl_photo = open(pnl_png_path, 'rb')
-                bot.send_message(chat_id, 'Grouping for 2 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                time.sleep(1)
-                bot.send_message(chat_id, 'PnL for 2 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-            time.sleep(1)
-        elif msg == '/h4_cb':
-            print('h4_cb')
-            grouped_png_path, pnl_png_path = make_group_pnl(4)
-
-            if grouped_png_path == 0:
-                bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                time.sleep(1)
-            else:
-                grouping_photo = open(grouped_png_path, 'rb')
-                pnl_photo = open(pnl_png_path, 'rb')
-                bot.send_message(chat_id, 'Grouping for 4 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                time.sleep(1)
-                bot.send_message(chat_id, 'PnL for 4 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-                time.sleep(1)
-        elif msg == '/h8_cb':
-            print('h8_cb')
-            grouped_png_path, pnl_png_path = make_group_pnl(8)
-
-            if grouped_png_path == 0:
-                bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                time.sleep(1)
-            else:
-                grouping_photo = open(grouped_png_path, 'rb')
-                pnl_photo = open(pnl_png_path, 'rb')
-                bot.send_message(chat_id, 'Grouping for 8 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                time.sleep(1)
-                bot.send_message(chat_id, 'PnL for 8 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-                time.sleep(1)
-        elif msg == '/h24_cb':
-            print('h24_cb')
-            grouped_png_path, pnl_png_path = make_group_pnl(24)
-
-            if grouped_png_path == 0:
-                bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                time.sleep(1)
-            else:
-                grouping_photo = open(grouped_png_path, 'rb')
-                pnl_photo = open(pnl_png_path, 'rb')
-                bot.send_message(chat_id, 'Grouping for 24 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                time.sleep(1)
-                bot.send_message(chat_id, 'PnL for 24 hours:', parse_mode='HTML')
-                time.sleep(1)
-                bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-                time.sleep(1)
+                hour_value = int(hour_value)
+                grouped_png_path, pnl_png_path = make_group_pnl(hour_value)
+                if grouped_png_path == 0:
+                    bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
+                    time.sleep(1)
+                else:
+                    grouping_photo = open(grouped_png_path, 'rb')
+                    pnl_photo = open(pnl_png_path, 'rb')
+                    bot.send_message(chat_id, f'Grouping for {hour_value} hour:', parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_message(chat_id, f'PnL for {hour_value} hour:', parse_mode='HTML')
+                    time.sleep(1)
+                    bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
+                    time.sleep(1)
         elif msg == '/custom_cb':
             bot.send_message(chat_id, message_dict['in_development'], parse_mode='HTML')
             time.sleep(1)
@@ -258,6 +237,17 @@ try:
         orders_df['Date(UTC)'] = pd.to_datetime(orders_df['Date(UTC)'])
         selected_df = orders_df.loc[(pd.Timestamp.utcnow() - td(hours=period_hours)) < orders_df['Date(UTC)']]
         grouped_df, pnl_df = grouping_pnl(selected_df, period_hours)
+        fifo_path, result_df = fifo_pnl_embedded(period_hours, orders_path)
+        fifo_df = result_df.T.rename(columns={'position': 'position_fifo', 'pnl': 'pnl_fifo'})
+        pnl_df.join(fifo_df)
+        final_df = pnl_df.join(fifo_df)
+        final_df['pnl_fifo']['summ'] = final_df['pnl_fifo'].sum()
+        final_df['position_fifo']['summ'] = final_df['position_fifo'].sum()
+        final_df = final_df[['price_buy', 'price_sell', 'buy_total_sum', 'sell_total_sum',
+                             'delta', 'profit', 'commission', 'total', 'pnl_fifo', 'position_fifo', 'profit/volume',
+                             'Сделок', 'Сделок в час', 'average', 'price_delta']]
+        final_df = final_df.rename(columns={'total': 'avco_total'})
+        pnl_df = final_df
 
         if len(grouped_df.columns) == 0 or len(pnl_df.columns) == 0:
             return 0, 0

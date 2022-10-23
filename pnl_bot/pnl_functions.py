@@ -192,7 +192,6 @@ def grouping_pnl(orders_df, period_hours):
     pnl_df = pnl_df.append(deals_per_hours_dict, ignore_index=True)
     pnl_df = pnl_df.append(average_count_or_dict, ignore_index=True)
     pnl_df = pnl_df.append(price_delta, ignore_index=True)
-    # todo опять нихуя не заводится надо разбираться
 
     # транспонируем таблицы, выносим первую строку как заголовок
     grouped_df = grouped_df.T
