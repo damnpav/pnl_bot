@@ -5,7 +5,6 @@ from datetime import datetime as dt
 import time
 
 
-# в соответствии со схемой pnl_count
 # нужны: функция saveOrders которая от старта до енда
 # загружает ордера,и либо делает append
 # в существующий csv или создает новый

@@ -15,7 +15,6 @@ import warnings
 import sys
 
 warnings.filterwarnings('ignore')
-#pd.options.display.float_format = '{:,.5f}'.format
 
 
 #  вскрываем json с конфигами
