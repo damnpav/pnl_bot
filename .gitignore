@@ -1,4 +1,5 @@
 /.ipynb_checkpoints
+/README.rst
 /backup
 /exportToHTML
 /notebooks
@@ -7,5 +8,4 @@
 /pnl_bot/PNGs
 /pnl_bot/*.csv
 /pnl_bot/*.json
-/README.rst
 /pnl_bot/logs_bot.txt
