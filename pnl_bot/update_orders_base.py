@@ -42,7 +42,7 @@ def update_orders(orders_df, exchange, all_tickers):
         new_orders_df = trades_to_df(my_trades, exchange)
         merged_df = pd.concat([new_orders_df.astype(str), orders_df], ignore_index=True)
         merged_df = merged_df.sort_values(by='Date(UTC)', ascending=True)
-        merged_df = merged_df.drop_duplicates(subset=['id', 'apiKey'], keep='last')
+        merged_df = merged_df.drop_duplicates(subset=['id', 'Market', 'apiKey'], keep='last')
         return merged_df
     else:
         return orders_df
