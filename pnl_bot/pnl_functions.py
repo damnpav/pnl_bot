@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime as dt
 import time
+import json
 
 
 # нужны: функция saveOrders которая от старта до енда
@@ -10,6 +11,7 @@ import time
 # в существующий csv или создает новый
 # формат дат - '2022-08-01T00:00:00'
 
+json_folder = r'jsons_data'
 
 def search_trades(all_tickers, start_date, end_date, exchange) -> list:
     """
@@ -49,6 +51,12 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
                     end_period = (dt.utcnow() - dt(1970, 1, 1)).total_seconds() * 1e3
 
                 trades = exchange.fetch_my_trades(ticker, start_time, None, {'endTime': end_period})
+
+                ### save trades to json ###
+                with open(json_folder + f"//{dt.now().strftime('%H_%M_%S_%d_%m_%Y')}.json", 'w') as json_file:
+                    json_file.write(json.dumps(trades))
+                ### ###
+
                 if len(trades):
                     start_time = trades[-1]['timestamp'] + 1  # следующая миллисекунда от последнего трейда
                     all_trades += trades
@@ -56,6 +64,12 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
                     start_time = end_period
         else:
             trades = exchange.fetch_my_trades(ticker, start_time, None, {'endTime': end_time})
+
+            ### save trades to json ###
+            with open(json_folder + f"//{dt.now().strftime('%H_%M_%S_%d_%m_%Y')}.json", 'w') as json_file:
+                json_file.write(json.dumps(trades))
+            ### ###
+
             all_trades += trades
     return all_trades
 
