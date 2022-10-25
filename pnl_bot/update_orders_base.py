@@ -30,7 +30,7 @@ def update_orders(orders_df, exchange, all_tickers):
     if exchange.apiKey in list(orders_df['apiKey'].unique()):
         # последняя дата ордеров по данному apiKey
         #start_date = orders_df.loc[orders_df['apiKey'] == exchange.apiKey, 'Date(UTC)'].max()[:19].replace(' ', 'T')
-        start_date = (dt.utcnow() - td(hours=1)).strftime('%Y-%m-%dT%H:%M:%S')
+        start_date = (dt.utcnow() - td(hours=2)).strftime('%Y-%m-%dT%H:%M:%S')
     else:
         # если apiKey новый, выгрузим по нему историю с прошлой недели
         start_date = str(dt.utcnow() - td(7))[:19].replace(' ', 'T')
