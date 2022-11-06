@@ -298,7 +298,8 @@ try:
             print('start tele_bot')
             bot.polling()
         except Exception as e:
-            print(f'Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')
+            # если часто будет падать, надо попробовать удалять и пересоздавать объект bot
+            print(f'Exception tele_bot:\n{e}\n\nTraceback:\n{traceback.format_exc()}')
             logging_errors(f'{str(dt.now())[:19]}: Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')
             time.sleep(30)
 

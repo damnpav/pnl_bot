@@ -73,7 +73,7 @@ try:
         if len(updated_df) != len(orders_df):
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
 
-    logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS SUCCESSFUL!')
+    logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS SUCCESSFUL!_ver2510')
 
 except Exception as e:
     print(f'Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')

@@ -257,7 +257,8 @@ def data_recency(orders_path):
     grouped_orders = grouped_orders.sort_values(by='Date(UTC)_max', ascending=False)
     return grouped_orders
 
-
+# TODO много раз запрашивать курс в цикле apply для каждой секунды - плохая практика
+# TODO надо сделать умнее - идти окнами по требуемым секундам, чтобы уменьшить кол-во запросов
 def apply_commission(fee_coin, total, amount, fee, date_utc, exchange):
     """
     Функция для приложения к таблице ордеров и подсчета комиссии в busd
@@ -286,8 +287,19 @@ def apply_commission(fee_coin, total, amount, fee, date_utc, exchange):
         # вот тут надо запросить курс bnb/busd
         # приводим строку ордера к типу exchange (timestamp в int)
         order_time = exchange.parse8601(str(date_utc)[:19].replace(' ', 'T'))
-        rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
-        commission = rp[0][1] * fee
+
+        # лучшие практики программирования
+        k = 0
+        while k < 2:
+            k += 1
+            try:
+                rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
+                commission = rp[0][1] * fee
+                k += 1
+            except Exception as e:
+                time.sleep(1)
+                commission = 0
+
     elif fee_coin == 'BUSD':
         commission = fee
     else:
