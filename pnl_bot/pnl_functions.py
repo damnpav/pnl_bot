@@ -273,8 +273,8 @@ def data_recency(orders_path):
     return grouped_orders
 
 
-# TODO много раз запрашивать курс в цикле apply для каждой секунды - плохая практика
-# TODO надо сделать умнее - идти окнами по требуемым секундам, чтобы уменьшить кол-во запросов
+
+
 def apply_commission(fee_coin, total, amount, fee, date_utc, exchange, bnb_course):
     """
     Функция для приложения к таблице ордеров и подсчета комиссии в busd
