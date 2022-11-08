@@ -5,13 +5,13 @@ from datetime import datetime as dt
 import time
 import json
 
-
 # нужны: функция saveOrders которая от старта до енда
 # загружает ордера,и либо делает append
 # в существующий csv или создает новый
 # формат дат - '2022-08-01T00:00:00'
 
 json_folder = r'jsons_data'
+
 
 def search_trades(all_tickers, start_date, end_date, exchange) -> list:
     """
@@ -97,8 +97,23 @@ def trades_to_df(all_trades, exchange) -> pd.DataFrame():
     output_df = output_df.rename(columns=rename_cols)
     final_cols = ['id', 'Date(UTC)', 'Market', 'Type', 'Price', 'Amount', 'Total', 'Fee', 'Fee Coin']
     final_df = output_df[final_cols]
+
+    # считаем комиссию
+    # заранее спросим курс bnb_busd
+    k = 0
+    while k < 2:
+        k += 1
+        try:
+            rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
+            bnb_course = rp[0][1]
+            k += 1
+        except Exception as e:
+            time.sleep(5)
+            bnb_course = 0
+
     final_df['commission'] = final_df.apply(lambda x: apply_commission(x['Fee Coin'], x['Total'], x['Amount'],
-                                                                       x['Fee'], x['Date(UTC)'], exchange), axis=1)
+                                                                       x['Fee'], x['Date(UTC)'], exchange,
+                                                                       bnb_course), axis=1)
     final_df['apiKey'] = exchange.apiKey
     return final_df
 
@@ -143,9 +158,9 @@ def grouping_pnl(orders_df, period_hours):
     # в delta_dict есть округления, нужны для правильного расчета маленьких чисел (где много знаков после запятой)
     for market in markets:
         buy_total_dict[market] = grouped_df.loc[((grouped_df['Market'] == market) &
-                                                (grouped_df['Type'] == 'buy')), 'Total'].sum()
+                                                 (grouped_df['Type'] == 'buy')), 'Total'].sum()
         sell_total_dict[market] = grouped_df.loc[((grouped_df['Market'] == market) &
-                                                 (grouped_df['Type'] == 'sell')), 'Total'].sum()
+                                                  (grouped_df['Type'] == 'sell')), 'Total'].sum()
         buy_amount_dict[market] = grouped_df.loc[((grouped_df['Market'] == market) &
                                                   (grouped_df['Type'] == 'buy')), 'Amount'].sum()
         sell_amount_dict[market] = grouped_df.loc[((grouped_df['Market'] == market) &
@@ -159,12 +174,12 @@ def grouping_pnl(orders_df, period_hours):
         p_to_vol_dict[market] = total_dict[market] / grouped_df.loc[(grouped_df['Market'] == market), 'Total'].sum()
         count_orders_dict[market] = grouped_df.loc[(grouped_df['Market'] == market), 'OrdersCount'].sum()
         deals_per_hours_dict[market] = count_orders_dict[market] / \
-                                        ((pd.to_datetime(orders_df.loc[orders_df['Market'] == market, 'Date(UTC)'].max())
-                                        - pd.to_datetime(orders_df.loc[orders_df['Market'] == market,
-                                          'Date(UTC)'].min())).total_seconds() // 3600)
+                                       ((pd.to_datetime(orders_df.loc[orders_df['Market'] == market, 'Date(UTC)'].max())
+                                         - pd.to_datetime(orders_df.loc[orders_df['Market'] == market,
+                                                                        'Date(UTC)'].min())).total_seconds() // 3600)
         first_price = orders_df.loc[orders_df['Market'] == market].reset_index()['Price'][0]
         last_price = orders_df.loc[orders_df['Market'] == market].reset_index()['Price'][-1:].values[0]
-        price_delta[market] = (last_price/first_price - 1) * 100  # изменение цены за выбранный период
+        price_delta[market] = (last_price / first_price - 1) * 100  # изменение цены за выбранный период
 
         if deals_per_hours_dict[market] == np.inf:
             deals_per_hours_dict[market] = count_orders_dict[market]
@@ -210,13 +225,13 @@ def grouping_pnl(orders_df, period_hours):
     grouped_df = grouped_df.T
     grouped_df.columns = grouped_df.iloc[0]
     grouped_df = grouped_df[1:]
-    
+
     pnl_df = pnl_df.T
     pnl_df.columns = pnl_df.iloc[0]
     pnl_df = pnl_df[1:]
 
     # считаем суммы
-    summ_dict={}
+    summ_dict = {}
     summ_dict['Type'] = 'summ'
     summ_dict['buy_total_sum'] = pnl_df['buy_total_sum'].sum()
     summ_dict['sell_total_sum'] = pnl_df['sell_total_sum'].sum()
@@ -257,9 +272,10 @@ def data_recency(orders_path):
     grouped_orders = grouped_orders.sort_values(by='Date(UTC)_max', ascending=False)
     return grouped_orders
 
+
 # TODO много раз запрашивать курс в цикле apply для каждой секунды - плохая практика
 # TODO надо сделать умнее - идти окнами по требуемым секундам, чтобы уменьшить кол-во запросов
-def apply_commission(fee_coin, total, amount, fee, date_utc, exchange):
+def apply_commission(fee_coin, total, amount, fee, date_utc, exchange, bnb_course):
     """
     Функция для приложения к таблице ордеров и подсчета комиссии в busd
     Комиссия - либо монета в которой и идёт трейд, тогда цену из этого трейд и взять,
@@ -273,6 +289,7 @@ def apply_commission(fee_coin, total, amount, fee, date_utc, exchange):
     fee - размер комиссии
     date_utc - дата ордера
     exchange - ccxt объект API handle к бирже, нужен для запроса цены BNB/BUSD в моменты оредов
+    bnb_course - курс bnb/busd посчитанный один раз извне
 
     Returns - comission (int) - размер комиссии в busd
     -------
@@ -286,19 +303,21 @@ def apply_commission(fee_coin, total, amount, fee, date_utc, exchange):
     elif fee_coin == 'BNB':
         # вот тут надо запросить курс bnb/busd
         # приводим строку ордера к типу exchange (timestamp в int)
-        order_time = exchange.parse8601(str(date_utc)[:19].replace(' ', 'T'))
+        #order_time = exchange.parse8601(str(date_utc)[:19].replace(' ', 'T'))
+        commission = bnb_course * fee
 
-        # лучшие практики программирования
-        k = 0
-        while k < 2:
-            k += 1
-            try:
-                rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
-                commission = rp[0][1] * fee
-                k += 1
-            except Exception as e:
-                time.sleep(1)
-                commission = 0
+
+        # # лучшие практики программирования
+        # k = 0
+        # while k < 2:
+        #     k += 1
+        #     try:
+        #         rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
+        #         commission = rp[0][1] * fee
+        #         k += 1
+        #     except Exception as e:
+        #         time.sleep(1)
+        #         commission = 0
 
     elif fee_coin == 'BUSD':
         commission = fee
