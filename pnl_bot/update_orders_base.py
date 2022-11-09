@@ -22,7 +22,7 @@ kst_dict = config_data['keys_secrets_tickers']
 # итерируемся по ключам в конфиге
 # по итогу будет список с кортежами по два элемента в каждом: первый - ccxt.binance, второй - список с тикерами
 exchange_list = [(ccxt.binance({'apiKey': x['api_key'], 'secret': x['secret'],
-                               'enableRateLimit': True, 'rateLimit': 100}), x['tickers']) for x in kst_dict]
+                               'enableRateLimit': True, 'rateLimit': 200}), x['tickers']) for x in kst_dict]
 
 
 def update_orders(orders_df, exchange, all_tickers):

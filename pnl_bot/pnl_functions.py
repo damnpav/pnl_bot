@@ -2,6 +2,7 @@ import ccxt
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
+from datetime import timedelta as td
 import time
 import json
 
@@ -104,12 +105,16 @@ def trades_to_df(all_trades, exchange) -> pd.DataFrame():
     while k < 2:
         k += 1
         try:
+            order_time = exchange.parse8601((dt.utcnow() - td(minutes=5)).strftime('%Y-%m-%dT%H:%M:%S'))
             rp = exchange.fetch_ohlcv('BNB/BUSD', '1m', order_time, 1)  # запрашиваем курс bnb/busd на момент ордера
+            time.sleep(1)
             bnb_course = rp[0][1]
             k += 1
+            print('success')
         except Exception as e:
             time.sleep(5)
             bnb_course = 0
+            print(f'FAIL: {e}, rp is {str(rp)}')
 
     final_df['commission'] = final_df.apply(lambda x: apply_commission(x['Fee Coin'], x['Total'], x['Amount'],
                                                                        x['Fee'], x['Date(UTC)'], exchange,
