@@ -100,14 +100,13 @@ try:
                     bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
                     time.sleep(1)
                 else:
-                    grouping_photo = open(grouped_png_path, 'rb')
+                    #grouping_photo = open(grouped_png_path, 'rb')
                     pnl_photo = open(pnl_png_path, 'rb')
-                    bot.send_message(chat_id, f'Grouping for {hour_int} hour:', parse_mode='HTML')
-                    time.sleep(1)
-                    bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                    time.sleep(1)
+                    # bot.send_message(chat_id, f'Grouping for {hour_int} hour:', parse_mode='HTML')
+                    # time.sleep(1)
+                    # bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
+                    # time.sleep(1)1
                     bot.send_message(chat_id, f'PnL for {hour_int} hour:', parse_mode='HTML')
-                    time.sleep(1)
                     bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
                     time.sleep(1)
 
@@ -172,18 +171,15 @@ try:
                 grouped_png_path, pnl_png_path = make_group_pnl(hour_value)
                 if grouped_png_path == 0:
                     bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
-                    time.sleep(1)
                 else:
-                    grouping_photo = open(grouped_png_path, 'rb')
+                    # grouping_photo = open(grouped_png_path, 'rb')
                     pnl_photo = open(pnl_png_path, 'rb')
-                    bot.send_message(chat_id, f'Grouping for {hour_value} hour:', parse_mode='HTML')
-                    time.sleep(1)
-                    bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                    time.sleep(1)
+                    # bot.send_message(chat_id, f'Grouping for {hour_value} hour:', parse_mode='HTML')
+                    # time.sleep(1)
+                    # bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
                     bot.send_message(chat_id, f'PnL for {hour_value} hour:', parse_mode='HTML')
-                    time.sleep(1)
                     bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
-                    time.sleep(1)
+                time.sleep(1)
         elif msg == '/custom_cb':
             bot.send_message(chat_id, message_dict['in_development'], parse_mode='HTML')
             time.sleep(1)
