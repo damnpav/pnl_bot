@@ -88,7 +88,7 @@ def trades_to_df(all_trades, exchange) -> pd.DataFrame():
 
     """
     trades_df = pd.DataFrame(all_trades)
-    needed_cols = ['id', 'datetime', 'symbol', 'side', 'price', 'amount', 'cost', 'fee']
+    needed_cols = ['id', 'order', 'datetime', 'symbol', 'side', 'price', 'amount', 'cost', 'fee']
     output_df = trades_df[needed_cols]
     output_df['Date(UTC)'] = pd.to_datetime(output_df['datetime'])
     output_df['Fee Coin'] = output_df['fee'].apply(lambda x: x['currency'])
@@ -96,7 +96,7 @@ def trades_to_df(all_trades, exchange) -> pd.DataFrame():
     output_df['symbol'] = output_df['symbol'].apply(lambda x: str(x).replace('/', ''))
     rename_cols = {'symbol': 'Market', 'side': 'Type', 'price': 'Price', 'amount': 'Amount', 'cost': 'Total'}
     output_df = output_df.rename(columns=rename_cols)
-    final_cols = ['id', 'Date(UTC)', 'Market', 'Type', 'Price', 'Amount', 'Total', 'Fee', 'Fee Coin']
+    final_cols = ['id', 'order', 'Date(UTC)', 'Market', 'Type', 'Price', 'Amount', 'Total', 'Fee', 'Fee Coin']
     final_df = output_df[final_cols]
 
     # считаем комиссию
