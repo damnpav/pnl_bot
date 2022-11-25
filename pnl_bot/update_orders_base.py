@@ -56,6 +56,7 @@ def logging_errors(log_message):
     log_message - сообщения для лога
     -------
     """
+    print(f'log_message: {log_message}')
     with open(logs_bot_path, 'a') as log_file:
         log_file.write(log_message + '\n')
 
