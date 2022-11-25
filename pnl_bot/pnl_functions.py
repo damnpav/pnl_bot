@@ -129,7 +129,6 @@ def grouping_pnl(orders_df, period_hours):
     Parameters
     ----------
     orders_df - dataframe; Таблица со списком ордеров из функции trades_to_df
-
     Returns - (dataframe, dataframe); два датафрейма со сгруппированными ордерами и рассчитанным pnl
     -------
 
