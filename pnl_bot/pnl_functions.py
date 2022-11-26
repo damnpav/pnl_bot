@@ -35,6 +35,7 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
     for ticker in all_tickers:
         time.sleep(1)
         k += 1
+
         print(f'{ticker}: {k} from {len(all_tickers)}')
         start_time = exchange.parse8601(start_date)
         end_time = exchange.parse8601(end_date)
@@ -45,6 +46,8 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
         if (end_time - start_time) > 1 * 60 * 60 * 1000:
             while start_time < end_time:
                 end_period = start_time + hour
+                # todo поменяй тут конвертацию start_time, end_period в читаемый вид
+                print(f'start_period: {start_time}, end_period: {end_period}')
 
                 # проверяем, что конец искомого периода не залетел за текущее время
                 # если залетел - то ставим конец периода на текущее время по UTC + конвертим в секунды от epoch
@@ -64,6 +67,7 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
                 else:
                     start_time = end_period
         else:
+            print(f'start_period: {start_time}, end_period: {end_time}')
             trades = exchange.fetch_my_trades(ticker, start_time, None, {'endTime': end_time})
 
             ### save trades to json ###
@@ -123,6 +127,7 @@ def trades_to_df(all_trades, exchange) -> pd.DataFrame():
     return final_df
 
 
+# todo необходимо убрать period_hours из всех упоминаний
 def grouping_pnl(orders_df, period_hours):
     """
     Функция для группировки списка ордеров и подсчета pnl

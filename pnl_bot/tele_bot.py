@@ -9,7 +9,7 @@ import dataframe_image as dfi
 import pandas as pd
 import re
 from pnl_functions import grouping_pnl, data_recency
-from fifo_module import fifo_pnl, fifo_pnl_embedded
+from fifo_module import fifo_pnl, fifo_pnl_embedded, fifo_pnl_embedded_period_ver
 
 import warnings
 import sys
@@ -30,7 +30,8 @@ logs_bot_path = config_data['logs_bot_path']
 
 message_dict = {'welcome': 'Привет!\nЭтот бот показывает pnl, выбери период\действие:',
                 'available': 'В базе ордеров\nминимальная дата: *min_date*,\nмаксимальная дата: *max_date*',
-                'in_development': 'Функция находится в разработке...'}
+                'in_development': 'Функция находится в разработке...',
+                'custom': 'Можно запросить pnl за N часов с помощью команды: /hN\nНапример: /h72'}
 
 try:
     bot = telebot.TeleBot(bot_token)
@@ -100,12 +101,7 @@ try:
                     bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
                     time.sleep(1)
                 else:
-                    #grouping_photo = open(grouped_png_path, 'rb')
                     pnl_photo = open(pnl_png_path, 'rb')
-                    # bot.send_message(chat_id, f'Grouping for {hour_int} hour:', parse_mode='HTML')
-                    # time.sleep(1)
-                    # bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
-                    # time.sleep(1)1
                     bot.send_message(chat_id, f'PnL for {hour_int} hour:', parse_mode='HTML')
                     bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
                     time.sleep(1)
@@ -145,6 +141,50 @@ try:
                     time.sleep(1)
 
 
+    @bot.message_handler(regexp="period*")
+    def period_handler(message):
+        """
+        Function to catch callback with regex for period pnl function
+        Query string should be in format like: period2022-11-05_2022-11-06
+        Parameters
+        ----------
+        message - callback with regex
+
+        Returns
+        -------
+        """
+        print('Handle period regex')
+        username = message.from_user.username
+        chat_id = message.chat.id
+        msg = message.text
+        if username not in bot_users:
+            print(f'User {username} not in bot_users')
+            logging_errors(f'{str(dt.now())[:19]}: User {username} not in bot_users')
+            return False
+
+        # parse dates from query
+        try:
+            msg_query = msg.replace('/period', '').split('_')
+            if type(msg_query) != list or len(msg_query) != 2:
+                logging_errors(f'Error in parsing of request in period handler')
+                bot.send_message(chat_id, f'Error in parsing of request in period handler\n'
+                                          f'Query string should be in format like: period2022-11-05_2022-11-06',
+                                 parse_mode='HTML')
+                return False
+        except Exception as e:
+            logging_errors(f'Exception at parsing of request in period handler:\n{e}')
+            return False
+
+        grouped_png_path, pnl_png_path = pnl_for_period(msg_query[0], msg_query[1])
+        if grouped_png_path == 0:
+            bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
+            time.sleep(1)
+        else:
+            pnl_photo = open(pnl_png_path, 'rb')
+            bot.send_message(chat_id, f'PnL for [{msg_query[0]} - {msg_query[1]}] period:', parse_mode='HTML')
+            bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
+            time.sleep(1)
+
 
     @bot.callback_query_handler(func=lambda call: True)
     def handle_buttons(call):
@@ -154,7 +194,6 @@ try:
         username = call.message.from_user.username
 
         # если не наш юзер - просто выйдет
-        # это кстати спорный моментик надо оттестить как следует
         if username not in bot_users:
             print(f'User {username} not in bot_users')
             logging_errors(f'{str(dt.now())[:19]}: User {username} not in bot_users')
@@ -172,16 +211,12 @@ try:
                 if grouped_png_path == 0:
                     bot.send_message(chat_id, 'No data for that period yet..', parse_mode='HTML')
                 else:
-                    # grouping_photo = open(grouped_png_path, 'rb')
                     pnl_photo = open(pnl_png_path, 'rb')
-                    # bot.send_message(chat_id, f'Grouping for {hour_value} hour:', parse_mode='HTML')
-                    # time.sleep(1)
-                    # bot.send_photo(chat_id=chat_id, photo=grouping_photo, parse_mode='HTML')
                     bot.send_message(chat_id, f'PnL for {hour_value} hour:', parse_mode='HTML')
                     bot.send_photo(chat_id=chat_id, photo=pnl_photo, parse_mode='HTML')
                 time.sleep(1)
         elif msg == '/custom_cb':
-            bot.send_message(chat_id, message_dict['in_development'], parse_mode='HTML')
+            bot.send_message(chat_id, message_dict['custom'], parse_mode='HTML')
             time.sleep(1)
         elif msg == '/available_cb':
             recency_df = data_recency(orders_path)
@@ -196,7 +231,7 @@ try:
             bot.send_message(chat_id, f"Текущее utc время:\n{dt.utcnow().strftime('%d-%m-%Y %H:%M:%S')}")
             time.sleep(1)
         elif msg == '/stop_cb':
-            bot.send_message(chat_id, f"tele_bot.py скрипт будет остановлен, перезапустить его можно через cronn\n"
+            bot.send_message(chat_id, f"tele_bot.py скрипт будет остановлен, перезапустить его можно через cron\n"
                                       f"update_orders_base.py (регулярное обновление ордеров) продолжает работать, "
                                       f"его можно выключить через cron")
             sys.exit()
@@ -222,13 +257,13 @@ try:
         Подсчета pnl и закатки таблицы с группировкой и pnl в картинку для отправки
         Parameters
         ----------
-        period_days - за сколько дней считаем pnl
+        period_hours - за сколько часов считаем pnl
         Returns - grouped_png_path, pnl_png_path; пути где лежат созданные картинки
         -------
 
         """
-        orders_df = pd.read_csv(orders_path, sep=';')
-        orders_df = orders_df.drop_duplicates()
+        orders_df = pd.read_csv(orders_path, sep=';', converters={'id': str, 'order': str})
+        orders_df = orders_df.drop_duplicates(subset=['id', 'order'], keep='last')
         orders_df['Date(UTC)'] = pd.to_datetime(orders_df['Date(UTC)'])
         selected_df = orders_df.loc[(pd.Timestamp.utcnow() - td(hours=period_hours)) < orders_df['Date(UTC)']]
         grouped_df, pnl_df = grouping_pnl(selected_df, period_hours)
@@ -251,6 +286,48 @@ try:
         grouped_df.columns = ['  | ' + str(x) + ' |  ' for x in grouped_df.columns]
         pnl_df.columns = ['  | ' + str(x) + ' |  ' for x in pnl_df.columns]
 
+
+        grouped_png_path = f'PNGs/grouped_df_{dt.now().strftime("%H%M%S%d%m%Y")}.png'
+        pnl_png_path = f'PNGs/pnl_df_{dt.now().strftime("%H%M%S%d%m%Y")}.png'
+        dfi.export(grouped_df, grouped_png_path, table_conversion='matplotlib', max_rows=-1, max_cols=-1)
+        dfi.export(pnl_df, pnl_png_path, table_conversion='matplotlib', max_rows=-1, max_cols=-1)
+        return grouped_png_path, pnl_png_path
+
+
+    def pnl_for_period(start_period, end_period):
+        """
+        Функция для pnl за выбранный период времени
+        ______
+        start_period - str, старт периода расчета в формате '%YYYY-%mm-%d', например '2022-11-05'
+        end_period - str, конец периода расчета в формате '%YYYY-%mm-%d', например '2022-11-05'
+        Returns
+        -------
+        """
+        orders_df = pd.read_csv(orders_path, sep=';', converters={'id': str, 'order': str})
+        orders_df = orders_df.drop_duplicates(subset=['id', 'order'], keep='last')
+        orders_df['Date(UTC)'] = pd.to_datetime(orders_df['Date(UTC)'])
+        start_dt = pd.to_datetime(start_period, utc=True)
+        end_dt = pd.to_datetime(end_period, utc=True) + td(hours=24)
+        selected_df = orders_df.loc[(orders_df['Date(UTC)'] >= start_dt) & (orders_df['Date(UTC)'] <= end_dt)]
+        grouped_df, pnl_df = grouping_pnl(selected_df, None)  # здесь заглушка вместо period_hours, надо убрать
+        fifo_path, result_df = fifo_pnl_embedded_period_ver(start_period, end_period, orders_path)
+        fifo_df = result_df.T.rename(columns={'position': 'position_fifo', 'pnl': 'pnl_fifo'})
+        pnl_df.join(fifo_df)
+        final_df = pnl_df.join(fifo_df)
+        final_df['pnl_fifo']['summ'] = final_df['pnl_fifo'].sum()
+        final_df['position_fifo']['summ'] = final_df['position_fifo'].sum()
+        final_df = final_df[['price_buy', 'price_sell', 'buy_total_sum', 'sell_total_sum',
+                             'delta', 'profit', 'commission', 'total', 'pnl_fifo', 'position_fifo', 'profit/volume',
+                             'Сделок', 'Сделок в час', 'average', 'price_delta']]
+        final_df = final_df.rename(columns={'total': 'avco_total'})
+        pnl_df = final_df
+
+        if len(grouped_df.columns) == 0 or len(pnl_df.columns) == 0:
+            return 0, 0
+
+        # добавим разделители к наименованию столбцов
+        grouped_df.columns = ['  | ' + str(x) + ' |  ' for x in grouped_df.columns]
+        pnl_df.columns = ['  | ' + str(x) + ' |  ' for x in pnl_df.columns]
 
         grouped_png_path = f'PNGs/grouped_df_{dt.now().strftime("%H%M%S%d%m%Y")}.png'
         pnl_png_path = f'PNGs/pnl_df_{dt.now().strftime("%H%M%S%d%m%Y")}.png'
@@ -285,6 +362,7 @@ try:
         log_message - сообщения для лога
         -------
         """
+        print(f'{str(dt.now())[:19]} log_message tele_bot.py: {log_message}')
         with open(logs_bot_path, 'a') as log_file:
             log_file.write(log_message + '\n')
 
