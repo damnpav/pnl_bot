@@ -46,8 +46,8 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
         if (end_time - start_time) > 1 * 60 * 60 * 1000:
             while start_time < end_time:
                 end_period = start_time + hour
-                # todo поменяй тут конвертацию start_time, end_period в читаемый вид
-                print(f'start_period: {start_time}, end_period: {end_period}')
+                print(f'start_period: {dt.fromtimestamp(start_time / 1e3).strftime("%Y-%m-%d %H:%m:%s")}, '
+                      f'end_period: {dt.fromtimestamp(end_period / 1e3).strftime("%Y-%m-%d %H:%m:%s")}')
 
                 # проверяем, что конец искомого периода не залетел за текущее время
                 # если залетел - то ставим конец периода на текущее время по UTC + конвертим в секунды от epoch
