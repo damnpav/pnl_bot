@@ -32,8 +32,8 @@ def update_orders(orders_df, exchange, all_tickers):
         #start_date = orders_df.loc[orders_df['apiKey'] == exchange.apiKey, 'Date(UTC)'].max()[:19].replace(' ', 'T')
         start_date = (dt.utcnow() - td(hours=2)).strftime('%Y-%m-%dT%H:%M:%S')
     else:
-        # если apiKey новый, выгрузим по нему историю с прошлой недели
-        start_date = str(dt.utcnow() - td(7))[:19].replace(' ', 'T')
+        # если apiKey новый, выгрузим по нему историю с прошлых 2х дней
+        start_date = str(dt.utcnow() - td(2))[:19].replace(' ', 'T')
 
     end_date = str(dt.utcnow())[:19].replace(' ', 'T')  # конец - текущий момент
     my_trades = search_trades(all_tickers, start_date, end_date, exchange)
@@ -72,6 +72,7 @@ try:
 
         # если есть новые трейды - записываем их
         if len(updated_df) != len(orders_df):
+            updated_df['Type'] = updated_df['Type'].str.lower()
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
         else:
             logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: no new orders (ver2511)')

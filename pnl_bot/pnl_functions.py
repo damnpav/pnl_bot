@@ -46,6 +46,7 @@ def search_trades(all_tickers, start_date, end_date, exchange) -> list:
         if (end_time - start_time) > 1 * 60 * 60 * 1000:
             while start_time < end_time:
                 end_period = start_time + hour
+                # TODO сделай ниже поправку на utc0, сейчас utc3 пишется
                 print(f'start_period: {dt.fromtimestamp(start_time / 1e3).strftime("%Y-%m-%d %H:%m:%s")}, '
                       f'end_period: {dt.fromtimestamp(end_period / 1e3).strftime("%Y-%m-%d %H:%m:%s")}')
 

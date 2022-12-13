@@ -10,8 +10,8 @@ warnings.filterwarnings('ignore')
 from pnl_functions import search_trades, trades_to_df
 
 
-start_day = '2022-11-25'
-end_day = '2022-11-25'
+start_day = '2022-12-08'
+end_day = '2022-12-08'
 
 
 config_path = r'config.json'
@@ -51,7 +51,7 @@ def update_orders(orders_df, exchange, all_tickers, start_day, end_day):
         new_orders_df = trades_to_df(my_trades, exchange)
         merged_df = pd.concat([new_orders_df.astype(str), orders_df], ignore_index=True)
         merged_df = merged_df.sort_values(by='Date(UTC)', ascending=True)
-        merged_df = merged_df.drop_duplicates(subset=['id', 'Market', 'apiKey'], keep='last')
+        merged_df = merged_df.drop_duplicates(subset=['id', 'order'], keep='last')
         return merged_df
     else:
         return orders_df
@@ -80,6 +80,7 @@ try:
 
         # если есть новые трейды - записываем их
         if len(updated_df) != len(orders_df):
+            updated_df['Type'] = updated_df['Type'].str.lower()
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
 
 except Exception as e:
