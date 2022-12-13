@@ -67,11 +67,13 @@ def logging_errors(log_message):
     """
     with open(logs_bot_path, 'a') as log_file:
         log_file.write(log_message + '\n')
+    print(f'LogMessage: {log_message}')
 
 
 try:
     print('Update orders...')
     k = 0
+    new_orders_api = []  # в каких апи были новые ордера?
     for exchange_item in exchange_list:
         k += 1
         print(f'\nApiKey {k} from {len(exchange_list)} keys')
@@ -82,6 +84,16 @@ try:
         if len(updated_df) != len(orders_df):
             updated_df['Type'] = updated_df['Type'].str.lower()
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
+            new_orders_api.append(exchange_item[0].apiKey[:6])
+        else:
+            logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS CUSTOM [{start_day} - {end_day}]: '
+                           f'no new orders for ApiKey: {exchange_item[0].apiKey[:6]}; '
+                           f'for tickers: {str(exchange_item[1])}')
+    if len(new_orders_api) > 0:
+        logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS CUSTOM [{start_day} - {end_day}]: SUCCESSFUL, '
+                       f'new orders for apiKeys: {str(new_orders_api)}')
+    else:
+        logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS CUSTOM [{start_day} - {end_day}]: no new orders at all!')
 
 except Exception as e:
     print(f'Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')

@@ -64,6 +64,7 @@ def logging_errors(log_message):
 try:
     print('Update orders...')
     k = 0
+    new_orders_api = []  # в каких апи были новые ордера?
     for exchange_item in exchange_list:
         k += 1
         print(f'\nApiKey {k} from {len(exchange_list)} keys')
@@ -74,10 +75,16 @@ try:
         if len(updated_df) != len(orders_df):
             updated_df['Type'] = updated_df['Type'].str.lower()
             updated_df.astype(str).to_csv(orders_path, index=False, sep=';')
+            new_orders_api.append(exchange_item[0].apiKey[:6])
         else:
-            logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: no new orders (ver2511)')
+            logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: no new orders for ApiKey: '
+                           f'{exchange_item[0].apiKey[:6]}; for tickers: {str(exchange_item[1])}')
 
-    logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: SUCCESSFUL (ver2511)')
+    if len(new_orders_api) > 0:
+        logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: SUCCESSFUL, '
+                       f'new orders for apiKeys: {str(new_orders_api)}')
+    else:
+        logging_errors(f'{str(dt.now())[:19]}: UPDATE ORDERS: no new orders at all!')
 
 except Exception as e:
     print(f'Exception:\n{e}\n\nTraceback:\n{traceback.format_exc()}')
